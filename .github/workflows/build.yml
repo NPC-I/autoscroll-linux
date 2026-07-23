@@ -16,15 +16,15 @@ jobs:
         include:
           - os: ubuntu-24.04
             pkg_ext: deb
-            pkg_path: ../autoscroll_*.deb
+            pkg_path: dist/autoscroll_*.deb
             deps: build-essential cmake gcc pkg-config debhelper-compat
           - os: fedora-40
             pkg_ext: rpm
-            pkg_path: ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm
+            pkg_path: dist/autoscroll-*.rpm
             deps: cmake gcc pkg-config rpm-build
           - os: archlinux
             pkg_ext: pkg.tar.zst
-            pkg_path: ./*.pkg.tar.zst
+            pkg_path: dist/*.pkg.tar.zst
             deps: cmake gcc base-devel
     runs-on: ${{ matrix.os }}
 
@@ -56,20 +56,24 @@ jobs:
 
     - name: Build package
       run: |
+        mkdir -p dist
         case "${{ matrix.os }}" in
           ubuntu-*)
             dpkg-buildpackage -b -uc -us
+            cp ../autoscroll_*.deb ../autoscroll-dbgsym_*.ddeb dist/ 2>/dev/null || true
             ;;
           fedora-*)
             mkdir -p ~/rpmbuild/SOURCES
             git archive --format=tar.gz --prefix=autoscroll-linux/ \
               -o ~/rpmbuild/SOURCES/autoscroll-1.0.0.tar.gz HEAD
             rpmbuild -ba --nodeps packaging/autoscroll.spec
+            cp ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm dist/
             ;;
           archlinux)
             cp -r aur /tmp/aur-build
             cd /tmp/aur-build
             makepkg -si --noconfirm
+            cp *.pkg.tar.zst "$OLDPWD/dist/" 2>/dev/null || true
             ;;
         esac
 
@@ -86,10 +90,13 @@ jobs:
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
+      with:
+        pattern: autoscroll-*
+        merge-multiple: true
     - name: Attach to release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          autoscroll-ubuntu-*/*
-          autoscroll-fedora-*/*
-          autoscroll-archlinux-*
+          autoscroll_*.deb
+          autoscroll-*.rpm
+          *.pkg.tar.zst
