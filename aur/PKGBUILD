@@ -12,7 +12,7 @@ url="https://github.com/talos/autoscroll-linux"
 license=('MIT')
 depends=('glibc')
 makedepends=('cmake' 'gcc')
-source=("${pkgname}-${pkgver}.tar.gz::https://github.com/talos/autoscroll-linux/archive/v${pkgver}.tar.gz")
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/NPC-I/autoscroll-linux/archive/v${pkgver}.tar.gz")
 sha256sums=('SKIP')
 
 build() {

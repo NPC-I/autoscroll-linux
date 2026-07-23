@@ -73,7 +73,7 @@ jobs:
             mkdir -p ~/rpmbuild/SOURCES
             tar czf ~/rpmbuild/SOURCES/autoscroll-1.0.0.tar.gz \
               --transform 's,^,autoscroll-linux/,' \
-              --exclude .git \
+              --exclude .git --exclude build \
               .
             rpmbuild -ba --nodeps packaging/autoscroll.spec
             cp ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm dist/

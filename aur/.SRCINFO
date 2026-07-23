@@ -9,7 +9,7 @@ pkgbase = autoscroll-linux
 	makedepends = cmake
 	makedepends = gcc
 	depends = glibc
-	source = autoscroll-linux-1.0.0.tar.gz::https://github.com/talos/autoscroll-linux/archive/v1.0.0.tar.gz
+	source = autoscroll-linux-1.0.0.tar.gz::https://github.com/NPC-I/autoscroll-linux/archive/v1.0.0.tar.gz
 	sha256sums = SKIP
 
 pkgname = autoscroll-linux
