@@ -25,7 +25,7 @@ jobs:
             container: fedora:40
             pkg_ext: rpm
             pkg_path: dist/autoscroll-*.rpm
-            deps: cmake gcc pkg-config rpm-build git
+            deps: cmake gcc pkg-config rpm-build
           - &arch
             os: archlinux
             container: archlinux:latest
@@ -71,16 +71,18 @@ jobs:
             ;;
           fedora-*)
             mkdir -p ~/rpmbuild/SOURCES
-            git archive --format=tar.gz --prefix=autoscroll-linux/ \
-              -o ~/rpmbuild/SOURCES/autoscroll-1.0.0.tar.gz HEAD
+            tar czf ~/rpmbuild/SOURCES/autoscroll-1.0.0.tar.gz \
+              --transform 's,^,autoscroll-linux/,' \
+              --exclude .git \
+              .
             rpmbuild -ba --nodeps packaging/autoscroll.spec
             cp ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm dist/
             ;;
           archlinux)
-            cd aur
-            MAKEFLAGS="-j$(nproc)" makepkg -s --noconfirm
-            cp *.pkg.tar.zst "$OLDPWD/dist/" 2>/dev/null || true
-            cd "$OLDPWD"
+            useradd -m builduser
+            chown -R builduser:builduser .
+            su builduser -c "cd aur && MAKEFLAGS='-j$(nproc)' makepkg -s --noconfirm"
+            cp aur/*.pkg.tar.zst dist/ 2>/dev/null || true
             ;;
         esac
 
