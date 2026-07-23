@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, fedora-40, archlinux]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies (Debian)
+      if: matrix.os == 'ubuntu-24.04'
+      run: sudo apt-get update && sudo apt-get install -y cmake gcc pkg-config
+
+    - name: Install dependencies (Fedora)
+      if: matrix.os == 'fedora-40'
+      run: sudo dnf install -y cmake gcc pkg-config
+
+    - name: Install dependencies (Arch)
+      if: matrix.os == 'archlinux'
+      run: sudo pacman -Syu --noconfirm cmake gcc
+
+    - name: Configure
+      run: cmake -B build -DBUILD_TESTS=ON
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure

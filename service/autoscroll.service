@@ -1,0 +1,21 @@
+[Unit]
+Description=autoscroll-linux — system-wide middle-button autoscroll
+Documentation=man:autoscroll(1)
+StartLimitIntervalSec=0
+After=systemd-udevd.service
+Wants=systemd-udevd.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/autoscroll.conf
+ExecStart=/usr/local/bin/autoscroll -f
+Restart=always
+RestartSec=2
+DevicePolicy=closed
+DeviceAllow=/dev/uinput rw
+DeviceAllow=char-input rw
+ProtectHome=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

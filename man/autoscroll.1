@@ -1,0 +1,190 @@
+.TH AUTOSCROLL 1 "2026-07-23" "1.0.0" "User Commands"
+.SH NAME
+autoscroll \- system-wide Windows-style middle-click autoscroll for Linux
+.SH SYNOPSIS
+.B autoscroll
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+\fBautoscroll\fR provides system-wide Windows-style middle-click autoscroll
+for Linux. It works on X11, GNOME Wayland, KDE Wayland, wlroots-based
+compositors (cosmic\-comp, Sway, Hyprland), Gamescope, and Weston.
+
+The daemon grabs mouse input devices via evdev (EVIOCGRAB) and creates a
+virtual uinput output device. When the middle button is pressed and held,
+pointer movement causes scrolling proportional to the distance from the
+anchor point. Quick press+release within the deadzone passes through as a
+normal middle-click (paste preserved).
+
+Two scroll modes are available:
+.TP
+.B Rate mode (default)
+Scroll speed follows \(lqnotches/sec = gain \(mu distance\(upexponent\(rq,
+capped at max_speed. Continues scrolling while held even if the pointer
+stops moving.
+.TP
+.B Position mode
+Scrolls only while actively moving, roughly 1:1 with pointer motion.
+.SH OPTIONS
+.SS "Scroll behavior:"
+.TP
+.B \-m, \-\-mode=\fIrate|position\fR
+Scroll feel (default: rate)
+.TP
+.B \-d, \-\-deadzone=\fIPX\fR
+Deadzone (px) before scroll starts. While the pointer stays within this
+radius of the anchor, no scrolling occurs. (default: 18)
+.TP
+.B \-g, \-\-gain=\fIFLOAT\fR
+Rate-mode speed factor. Multiplied against \fBdistance\(upexponent\fR to
+compute notches/second. (default: 0.020)
+.TP
+.B \-e, \-\-exponent=\fIFLOAT\fR
+Rate-mode curve exponent. Higher values make scrolling ramp up faster with
+distance. (default: 1.30)
+.TP
+.B \-\-max\-speed=\fIFLOAT\fR
+Rate-mode notches/sec cap. Prevents runaway scrolling. (default: 40.0)
+.TP
+.B \-p, \-\-position\-factor=\fIFLOAT\fR
+Position-mode sensitivity. Multiplied against pointer delta to convert
+pixels to scroll notches. (default: 0.06)
+.TP
+.B \-t, \-\-tick=\fIMS\fR
+Rate-mode tick interval in milliseconds. Controls scroll update rate.
+Lower = smoother but more CPU. (default: 15)
+.TP
+.B \-H, \-\-no\-horizontal
+Disable horizontal scrolling. Only vertical scroll events are emitted.
+.TP
+.B \-\-invert\-v
+Flip vertical scroll direction. Moving the mouse up scrolls down and
+vice versa.
+.TP
+.B \-\-invert\-h
+Flip horizontal scroll direction.
+.SS "Device selection:"
+.TP
+.B \-L, \-\-list\-devices
+List available input devices (shows /dev/input/eventN paths and names).
+Useful for finding the right device path or name regex. Exits after listing.
+.TP
+.B \-D, \-\-device=\fIPATH\fR
+Pin a specific /dev/input/eventN device. Skips device discovery and
+regex matching. Useful when the automatic name regex matches the wrong
+device.
+.TP
+.B \-\-match\-name=\fIREGEX\fR
+Device name filter regex (POSIX extended, case-insensitive).
+(default: none — matches all pointing devices)
+.SS "Runtime:"
+.TP
+.B \-f, \-\-foreground
+Don't daemonize. Stay in the foreground (useful for testing with \-v).
+.TP
+.B \-v, \-\-verbose
+Log state transitions to stderr. Shows IDLE/HELD/SCROLLING state changes
+and distance values.
+.TP
+.B \-V, \-\-version
+Print version string and exit.
+.TP
+.B \-h, \-\-help
+Print help text and exit.
+.SH CONFIGURATION
+Configuration is read from \fB/etc/autoscroll.conf\fR (INI-style). CLI flags
+override config file values. The file is optional \(em defaults apply if it
+doesn't exist.
+
+Example /etc/autoscroll.conf:
+.RS
+.nf
+mode = rate
+deadzone = 18
+gain = 0.020
+exponent = 1.30
+max_speed = 40.0
+tick_ms = 15
+position_factor = 0.06
+horizontal = true
+invert_v = false
+invert_h = false
+match_name = (?i)mouse
+.RE
+.SH INTERACTIVE BEHAVIOR
+.PP
+The autoscroll state machine:
+.IP 1. 3
+Press and hold middle button \(-> anchor is set at current cursor position
+.IP 2. 3
+Move pointer while holding \(-> scroll speed proportional to distance from anchor
+.IP 3. 3
+Release middle button \(-> scrolling stops, normal mode resumes
+.IP 4. 3
+Quick press+release within deadzone \(-> passes through as normal middle-click
+(paste preserved)
+.SH EXAMPLES
+.TP
+Run in foreground with verbose logging:
+    autoscroll \-f \-v
+.TP
+Use position mode with larger deadzone:
+    autoscroll \-m position \-d 30
+.TP
+List available input devices:
+    autoscroll \-L
+.TP
+Pin a specific device:
+    autoscroll \-D /dev/input/event5
+.TP
+Use a custom device match:
+    autoscroll \-\-match-name \(dqLogitech\(dq
+.SH FILES
+.TP
+\fI/etc/autoscroll.conf\fR
+Optional configuration file (INI-style)
+.TP
+\fI/usr/lib/systemd/system/autoscroll.service\fR
+Systemd service unit (installed via package)
+.TP
+\fI/usr/lib/udev/rules.d/99-autoscroll.rules\fR
+udev rules for /dev/uinput permissions
+.SH KNOWN CAVEATS
+.PP
+\fBCursor freezes during autoscroll:\fR
+Pointer REL events are suppressed while autoscrolling \(em the cursor
+won't move. This is intentional and matches Windows autoscroll behavior.
+.PP
+\fBCursor jumps on exit:\fR
+When autoscroll ends, the compositor catches up with accumulated relative
+motion. The cursor may jump. Same behavior as Windows.
+.PP
+\fBNo visual feedback:\fR
+Wayland does not expose a cursor icon API from userspace. Check status
+via \fBjournalctl \-u autoscroll\fR.
+.PP
+\fBGame grab conflicts:\fR
+If a game has grabbed the mouse (EVIOCGRAB EBUSY), the device is skipped.
+Run \fBautoscroll \-L\fR to see available devices.
+.PP
+\fBSELinux/AppArmor (Fedora):\fR
+Enforcing policies may block uinput. Use \fBaudit2allow\fR to generate the
+necessary SELinux policy module.
+.PP
+\fBMinimum kernel:\fR
+Linux 5.0+ required for REL_WHEEL_HI_RES. Older kernels fall back to
+discrete REL_WHEEL events.
+.SH NOTES
+.PP
+The daemon must run as root to access /dev/uinput. The provided systemd
+service uses DevicePolicy=closed for sandboxing (only /dev/uinput and
+input devices are accessible).
+.PP
+Quick press+release of the middle button (within the deadzone) passes
+through as a normal middle-click for paste.
+.PP
+To debug: run \fBautoscroll \-f \-v\fR as root. State transitions and
+device discovery are logged to stderr.
+.SH SEE ALSO
+.IR https://github.com/talos/autoscroll-linux
+.SH AUTHOR
+autoscroll-linux contributors

@@ -1,0 +1,4 @@
+# Allow users in the 'input' group to read input devices
+# and allow the autoscroll daemon to use /dev/uinput
+KERNEL=="uinput", MODE="0660", GROUP="input", TAG+="systemd"
+KERNEL=="event*", SUBSYSTEM=="input", MODE="0660", GROUP="input"

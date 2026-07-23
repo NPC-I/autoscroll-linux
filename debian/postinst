@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+case "$1" in
+    configure)
+        if [ -z "$2" ]; then
+            # First install — enable the service
+            systemctl --no-reload enable autoscroll.service || true
+        fi
+        ;;
+esac

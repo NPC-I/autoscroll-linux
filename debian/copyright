@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: autoscroll
+Upstream-Contact: autoscroll-linux contributors <root@localhost>
+Source: https://github.com/talos/autoscroll-linux
+
+Files: *
+Copyright: 2026 autoscroll-linux contributors
+License: MIT

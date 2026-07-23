@@ -1,0 +1,10 @@
+build/
+*.o
+*.a
+*.so
+*.swp
+*.swo
+*~
+.cache/
+compile_commands.json
+.playwright-mcp/

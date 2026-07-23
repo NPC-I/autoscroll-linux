@@ -1,0 +1,18 @@
+Source: autoscroll
+Section: utils
+Priority: optional
+Maintainer: autoscroll-linux contributors <root@localhost>
+Build-Depends: debhelper-compat (= 13), cmake (>= 3.16), pkg-config
+Standards-Version: 4.6.2
+Homepage: https://github.com/talos/autoscroll-linux
+
+Package: autoscroll
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: system-wide Windows-style middle-click autoscroll for Linux
+ autoscroll provides system-wide middle-click autoscroll (like Windows)
+ for Linux. It works on X11 and all Wayland compositors (GNOME, KDE,
+ cosmic-comp, Sway, Hyprland, Gamescope, Weston).
+ .
+ The daemon uses evdev+uinput with zero runtime dependencies.
+ Quick press+release of the middle button passes through as paste.
