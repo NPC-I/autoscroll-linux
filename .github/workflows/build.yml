@@ -17,7 +17,7 @@ jobs:
           - os: ubuntu-24.04
             pkg_ext: deb
             pkg_path: ../autoscroll_*.deb
-            deps: cmake gcc pkg-config debhelper-compat
+            deps: build-essential cmake gcc pkg-config debhelper-compat
           - os: fedora-40
             pkg_ext: rpm
             pkg_path: ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm
