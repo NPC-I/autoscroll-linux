@@ -1,0 +1,15 @@
+pkgbase = autoscroll-linux
+	pkgdesc = System-wide Windows-style middle-click autoscroll for Linux
+	pkgver = 1.0.0
+	pkgrel = 1
+	url = https://github.com/talos/autoscroll-linux
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = cmake
+	makedepends = gcc
+	depends = glibc
+	source = autoscroll-linux-1.0.0.tar.gz::https://github.com/talos/autoscroll-linux/archive/v1.0.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = autoscroll-linux

@@ -1,0 +1,33 @@
+# Maintainer: autoscroll-linux contributors <root@localhost>
+# Contributor: Talos AI <talos@npc-it.co.uk>
+# AUR package for autoscroll-linux — system-wide middle-click autoscroll
+# Build from source: https://github.com/talos/autoscroll-linux
+
+pkgname=autoscroll-linux
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="System-wide Windows-style middle-click autoscroll for Linux"
+arch=('x86_64' 'aarch64')
+url="https://github.com/talos/autoscroll-linux"
+license=('MIT')
+depends=('glibc')
+makedepends=('cmake' 'gcc')
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/talos/autoscroll-linux/archive/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "${srcdir}/${pkgname}"
+    cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON \
+          -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build build
+}
+
+check() {
+    cd "${srcdir}/${pkgname}"
+    ctest --test-dir build
+}
+
+package() {
+    cd "${srcdir}/${pkgname}"
+    DESTDIR="${pkgdir}" cmake --install build
+}

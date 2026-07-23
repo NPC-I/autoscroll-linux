@@ -100,7 +100,51 @@ match_name =
 
 CLI flags **override** config file values.
 
-## Build from Source
+## Build Packages
+
+### Debian / Ubuntu
+
+```bash
+# Requires debhelper-compat
+sudo apt-get install debhelper-compat
+
+# From the project source tree:
+dpkg-buildpackage -b -uc -us
+sudo dpkg -i ../autoscroll_1.0.0-1_*.deb
+```
+
+The `.deb` is written to the parent directory. The package installs the binary,
+systemd service, udev rules, and man page. The postinst script reloads udev
+rules, adds the installing user to the `input` group for `/dev/uinput` access,
+and enables/starts the service automatically.
+
+### Fedora / RHEL
+
+```bash
+# Requires rpmbuild (install rpm-build if missing)
+sudo dnf install rpm-build cmake gcc
+
+# Build both binary and source RPMs
+rpmbuild -ba packaging/autoscroll.spec
+
+# Install the binary RPM
+sudo dnf install ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm
+```
+
+The RPM is written to `~/rpmbuild/RPMS/x86_64/`. The spec also builds a source
+RPM written to `~/rpmbuild/SRPMS/`.
+
+### Arch Linux (AUR)
+
+```bash
+cd aur/
+makepkg -si
+```
+
+Or submit `aur/` to the AUR for automated builds via `yay`, `paru`, or
+`pamac` on Arch-based systems.
+
+### Source Build
 
 ```bash
 # Dependencies: cmake, gcc, make, glibc
@@ -108,15 +152,6 @@ cmake -B build -DBUILD_TESTS=ON
 cmake --build build
 ctest --test-dir build          # run unit tests
 sudo cmake --install build       # install to /usr/local
-```
-
-### Debian Package
-
-```bash
-# From source tree (requires debhelper-compat):
-sudo apt-get install debhelper-compat
-dpkg-buildpackage -b -uc -us
-sudo dpkg -i ../autoscroll_1.0.0-1_*.deb
 ```
 
 ## How It Works
