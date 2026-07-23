@@ -6,8 +6,9 @@ on:
     tags: ['v*']
   pull_request:
     branches: [main]
-  release:
-    types: [published]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -97,5 +98,3 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: ${{ matrix.pkg_path }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
