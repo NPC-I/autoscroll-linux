@@ -1,10 +1,21 @@
 #!/bin/sh
 set -e
+
 case "$1" in
     configure)
-        if [ -z "$2" ]; then
-            # First install — enable the service
-            systemctl --no-reload enable autoscroll.service || true
+        # Reload udev rules so /dev/uinput permissions apply
+        udevadm control --reload-rules 2>/dev/null || true
+        udevadm trigger --subsystem-match=input 2>/dev/null || true
+
+        # Add the user who ran the install to 'input' group for /dev/uinput access
+        if [ -n "${SUDO_USER}" ]; then
+            if ! groups "${SUDO_USER}" 2>/dev/null | grep -qw input; then
+                adduser "${SUDO_USER}" input 2>/dev/null || true
+            fi
         fi
+
+        # Enable and start the service
+        systemctl --no-reload enable autoscroll.service 2>/dev/null || true
+        systemctl restart autoscroll.service 2>/dev/null || true
         ;;
 esac

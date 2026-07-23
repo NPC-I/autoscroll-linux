@@ -1,7 +1,7 @@
 # autoscroll-linux
 
 **System-wide Windows-style middle-click autoscroll for Linux.**  
-Single binary, zero runtime dependencies, single evdev+uinput backend proven to
+Single binary, zero runtime dependencies, evdev+uinput backend proven to
 work on **every Linux desktop**: X11, GNOME Wayland, KDE Wayland, wlroots
 (cosmic-comp, Sway, Hyprland), Gamescope, Weston.
 
@@ -11,22 +11,36 @@ normal middle-click (paste preserved).
 
 ## Quick Start
 
-```bash
-# Install the system service
-sudo cmake --install build
-sudo cp service/autoscroll.service /etc/systemd/system/
-sudo cp udev/99-autoscroll.rules /etc/udev/rules.d/
-sudo systemctl daemon-reload
-sudo systemctl enable --now autoscroll
-```
-
-Or run directly (must be root for `/dev/uinput`):
+### Debian / Ubuntu
 
 ```bash
-sudo build/src/autoscroll -f -v
+sudo dpkg -i autoscroll_1.0.0-1_amd64.deb
 ```
 
-That's it. Hold middle-click anywhere and move the mouse to scroll.
+That's it. The package installs the binary, adds the systemd service, installs
+udev rules for `/dev/uinput`, and starts the daemon immediately.
+
+### Fedora / RHEL
+
+```bash
+rpmbuild -ba packaging/autoscroll.spec
+sudo dnf install ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm
+```
+
+### Arch Linux
+
+```bash
+makepkg -si
+```
+
+### From Source
+
+```bash
+cmake -B build -DBUILD_TESTS=ON
+cmake --build build
+ctest --test-dir build          # run unit tests
+sudo cmake --install build       # install to /usr/local
+```
 
 ## Usage
 
@@ -35,10 +49,10 @@ autoscroll [OPTIONS]
 
 Scroll behavior:
   -m, --mode=rate|position     Scroll feel              [rate]
-  -d, --deadzone=PX            Deadzone before scroll   [18]
-  -g, --gain=FLOAT             Rate-mode speed factor   [0.200]
-  -e, --exponent=FLOAT         Rate-mode curve          [1.30]
-      --max-speed=FLOAT        Notches/sec cap          [40.0]
+  -d, --deadzone=PX            Deadzone before scroll   [6]
+  -g, --gain=FLOAT             Rate-mode speed factor   [0.240]
+  -e, --exponent=FLOAT         Rate-mode curve          [1.00]
+      --max-speed=FLOAT        Notches/sec cap          [160.0]
   -p, --position-factor=FLOAT  Position sensitivity     [0.06]
   -t, --tick=MS                Rate-mode tick           [15]
   -H, --no-horizontal          Disable horizontal scrolling
@@ -64,7 +78,7 @@ Runtime:
    - **Rate mode** (default): scroll continues at computed speed even if you stop moving
    - **Position mode**: scrolls only while actively moving, roughly 1:1
 3. **Release** middle button → scrolling stops
-4. **Quick press+release** (within deadzone) → passes through as normal middle-click → paste works
+4. **Quick press+release** (within deadzone, <200ms) → passes through as normal middle-click → paste works
 
 ## Configuration
 
@@ -72,10 +86,10 @@ Edit `/etc/autoscroll.conf`:
 
 ```ini
 mode = rate
-deadzone = 18
-gain = 0.020
-exponent = 1.30
-max_speed = 40.0
+deadzone = 6
+gain = 0.240
+exponent = 1.00
+max_speed = 160.0
 tick_ms = 15
 position_factor = 0.06
 horizontal = true
@@ -96,24 +110,13 @@ ctest --test-dir build          # run unit tests
 sudo cmake --install build       # install to /usr/local
 ```
 
-### Distro Packages
+### Debian Package
 
-**Debian/Ubuntu:**
 ```bash
-# From source tree:
-dpkg-buildpackage -us -uc
+# From source tree (requires debhelper-compat):
+sudo apt-get install debhelper-compat
+dpkg-buildpackage -b -uc -us
 sudo dpkg -i ../autoscroll_1.0.0-1_*.deb
-```
-
-**Fedora/RHEL:**
-```bash
-rpmbuild -ba packaging/autoscroll.spec
-sudo dnf install ~/rpmbuild/RPMS/x86_64/autoscroll-*.rpm
-```
-
-**Arch Linux:**
-```bash
-makepkg -si
 ```
 
 ## How It Works
@@ -124,10 +127,13 @@ Physical mouse
     ▼
 autoscroll daemon (EVIOCGRAB — exclusive access)
     │
-    ├── IDLE ──[BTN_MIDDLE down]──→ HELD (set anchor)
-    │   ├── [move inside deadzone] → stay HELD
-    │   ├── [move outside deadzone] → SCROLLING
-    │   │   └── emit REL_WHEEL_HI_RES + REL_WHEEL
+    ├── IDLE ──[BTN_MIDDLE down]──→ HELD/SROLLING
+    │   │
+    │   │   On each tick (66Hz): accumulate velocity → emit REL_WHEEL_HI_RES
+    │   │   (120 units/notch) at 1/4 grain for smooth, low-latency scroll
+    │   │   Minimum 1 unit per tick ensures steady event stream even at
+    │   │   the gentlest pull.
+    │   │
     │   └── [BTN_MIDDLE up]
     │       ├── inside deadzone → synthesize click → uinput (paste passthrough)
     │       └── outside deadzone → consumed, return to IDLE
@@ -145,10 +151,11 @@ Key design decisions:
   desktops including X11, no portal dialogs, no D-Bus dependency
 - **System service** (not user): runs as root with `DevicePolicy=closed`
   sandboxing for /dev/uinput access
-- **Hold-to-scroll** (not click-to-toggle): matches modern UX, proven by
-  mmb-autoscroll; quick click within deadzone passes through as paste
-- **Hi-res wheel** (`REL_WHEEL_HI_RES`, 120 units/notch): smooth scrolling
-  with backward-compatible `REL_WHEEL` fallback
+- **Hold-to-scroll** (not click-to-toggle): matches modern UX; quick click
+  within deadzone passes through as paste
+- **Hi-res wheel** (`REL_WHEEL_HI_RES`, 120 units/notch): scroll grain=4
+  halves each scroll step for fine control; linear curve (exponent=1.0) for
+  predictable speed ramp
 
 ## Coverage
 
@@ -186,7 +193,6 @@ autoscroll-linux/
 ├── README.md
 ├── LICENSE                     # MIT
 ├── VERSION                     # 1.0.0
-├── PLAN.md                     # Full implementation plan
 ├── src/
 │   ├── main.c                  # Entry, event loop, daemonize, signalfd
 │   ├── config.c/h              # INI parser + CLI arg parser
@@ -208,24 +214,6 @@ autoscroll-linux/
 └── .github/workflows/
     └── build.yml               # CI: Ubuntu, Fedora, Arch
 ```
-
-## Why evdev+uinput (not libei)?
-
-The plan explicitly chooses evdev+uinput for V1. libei (v1.5/1.6) is an
-optional Wayland-native alternative through xdg-desktop-portal RemoteDesktop.
-
-| Factor | evdev+uinput | libei+portal |
-|--------|-------------|--------------|
-| Dependencies | None (just libc) | libei, liboeffis, D-Bus, portal |
-| Works on X11 | ✅ Yes | ❌ No (Wayland only) |
-| Works on Wayland | ✅ Yes (proven) | ✅ Yes |
-| Root required? | ✅ System service | ❌ No (portal auth) |
-| User setup | ❌ None (install + enable) | ✅ Portal dialog (first session) |
-| Compositor-aware | ❌ No (below compositor) | ✅ Yes |
-| Code complexity | ~700 lines | Higher (D-Bus + libei IPC) |
-| Proven in production | ✅ mmb-autoscroll | ⚠️ InputLeap (experimental) |
-
-A future V2 may add an optional libei backend for non-root operation.
 
 ## License
 

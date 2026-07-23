@@ -8,7 +8,7 @@ Wants=systemd-udevd.service
 [Service]
 Type=simple
 EnvironmentFile=-/etc/autoscroll.conf
-ExecStart=/usr/local/bin/autoscroll -f
+ExecStart=/usr/bin/autoscroll -f
 Restart=always
 RestartSec=2
 DevicePolicy=closed

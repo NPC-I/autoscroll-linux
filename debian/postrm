@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    purge)
+        systemctl stop autoscroll.service 2>/dev/null || true
+        systemctl disable autoscroll.service 2>/dev/null || true
+        rm -f /etc/autoscroll.conf 2>/dev/null || true
+        ;;
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+esac

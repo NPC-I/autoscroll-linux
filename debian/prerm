@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
+
 case "$1" in
-    remove|deconfigure)
-        systemctl stop autoscroll.service || true
+    remove|upgrade|deconfigure)
+        systemctl --no-reload stop autoscroll.service 2>/dev/null || true
         ;;
 esac
