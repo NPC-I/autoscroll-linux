@@ -44,10 +44,10 @@ jobs:
             sudo apt-get update && sudo apt-get install -y ${{ matrix.deps }}
             ;;
           fedora-*)
-            sudo dnf install -y ${{ matrix.deps }}
+            dnf install -y ${{ matrix.deps }}
             ;;
           archlinux)
-            sudo pacman -Syu --noconfirm ${{ matrix.deps }}
+            pacman -Syu --noconfirm ${{ matrix.deps }}
             ;;
         esac
 
@@ -84,10 +84,10 @@ jobs:
             cmake -B build -DBUILD_TESTS=ON .
             cmake --build build
             ctest --test-dir build
-            cp -r aur /tmp/aur-build
-            cd /tmp/aur-build
-            makepkg -si --noconfirm
+            cd aur
+            MAKEFLAGS="-j$(nproc)" makepkg -s --noconfirm
             cp *.pkg.tar.zst "$OLDPWD/dist/" 2>/dev/null || true
+            cd "$OLDPWD"
             ;;
         esac
 
