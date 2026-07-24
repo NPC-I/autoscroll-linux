@@ -82,6 +82,12 @@ jobs:
           archlinux)
             useradd -m builduser
             chown -R builduser:builduser .
+            # Create local source tarball so makepkg doesn't fetch from GitHub
+            PKGVER=$(sed -n 's/^pkgver=//p' aur/PKGBUILD)
+            PKGNAME=$(sed -n 's/^pkgname=//p' aur/PKGBUILD)
+            tar czf "aur/${PKGNAME}-${PKGVER}.tar.gz" \
+              --exclude .git --exclude build --exclude aur \
+              --transform "s,^,${PKGNAME}-${PKGVER}/," .
             su builduser -c "cd aur && MAKEFLAGS='-j$(nproc)' makepkg -s --noconfirm"
             cp aur/*.pkg.tar.zst dist/ 2>/dev/null || true
             ;;
