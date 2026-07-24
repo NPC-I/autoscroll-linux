@@ -48,11 +48,47 @@ void config_set_defaults(void)
 }
 
 /* ── Simple INI-style parser ────────────────────────────────────── */
-static void trim(char *s)
+static char *trim(char *s)
 {
+    while (isspace((unsigned char)*s)) s++;
     char *e = s + strlen(s) - 1;
-    while (e >= s && isspace((unsigned char)*e)) *e-- = '\0';
-    while (*s && isspace((unsigned char)*s)) s++;
+    while (e > s && isspace((unsigned char)*e)) *e-- = '\0';
+    return s;
+}
+
+/* ── Bounds-checked numeric parsers ──────────────────────────────── */
+static int parse_int(const char *s, int *out, int min, int max, const char *name)
+{
+    if (!s || !*s) { fprintf(stderr, "[autoscroll] config: %s missing\n", name); return -1; }
+    char *end;
+    long val = strtol(s, &end, 10);
+    if (*end || end == s) {
+        fprintf(stderr, "[autoscroll] config: %s '%s' is not a number\n", name, s);
+        return -1;
+    }
+    if (val < min || val > max) {
+        fprintf(stderr, "[autoscroll] config: %s=%ld out of range [%d,%d]\n", name, val, min, max);
+        return -1;
+    }
+    *out = (int)val;
+    return 0;
+}
+
+static int parse_double(const char *s, double *out, double min, double max, const char *name)
+{
+    if (!s || !*s) { fprintf(stderr, "[autoscroll] config: %s missing\n", name); return -1; }
+    char *end;
+    double val = strtod(s, &end);
+    if (*end || end == s) {
+        fprintf(stderr, "[autoscroll] config: %s '%s' is not a number\n", name, s);
+        return -1;
+    }
+    if (val < min || val > max) {
+        fprintf(stderr, "[autoscroll] config: %s=%g out of range [%g,%g]\n", name, val, min, max);
+        return -1;
+    }
+    *out = val;
+    return 0;
 }
 
 int config_parse_file(const char *path)
@@ -69,24 +105,36 @@ int config_parse_file(const char *path)
         char *eq = strchr(p, '=');
         if (!eq) continue;
         *eq++ = '\0';
-        trim(p);
-        trim(eq);
+        p = trim(p);
+        eq = trim(eq);
 
         if      (strcmp(p, "mode") == 0)
             cfg_mode = (strcmp(eq, "position") == 0) ? 1 : 0;
-        else if (strcmp(p, "deadzone") == 0)
-            cfg_deadzone = atoi(eq);
-        else if (strcmp(p, "gain") == 0)
-            cfg_gain = atof(eq);
-        else if (strcmp(p, "exponent") == 0)
-            cfg_exponent = atof(eq);
-        else if (strcmp(p, "max_speed") == 0)
-            cfg_max_speed = atof(eq);
-        else if (strcmp(p, "tick_ms") == 0)
-            cfg_tick_ms = atoi(eq);
-        else if (strcmp(p, "position_factor") == 0)
-            cfg_position_factor = atof(eq);
-        else if (strcmp(p, "horizontal") == 0)
+        else if (strcmp(p, "deadzone") == 0) {
+            int tmp;
+            if (parse_int(eq, &tmp, 0, 9999, "deadzone") == 0)
+                cfg_deadzone = tmp;
+        } else if (strcmp(p, "gain") == 0) {
+            double tmp;
+            if (parse_double(eq, &tmp, 0.001, 100.0, "gain") == 0)
+                cfg_gain = tmp;
+        } else if (strcmp(p, "exponent") == 0) {
+            double tmp;
+            if (parse_double(eq, &tmp, 0.1, 10.0, "exponent") == 0)
+                cfg_exponent = tmp;
+        } else if (strcmp(p, "max_speed") == 0) {
+            double tmp;
+            if (parse_double(eq, &tmp, 0.1, 1000.0, "max_speed") == 0)
+                cfg_max_speed = tmp;
+        } else if (strcmp(p, "tick_ms") == 0) {
+            int tmp;
+            if (parse_int(eq, &tmp, 5, 1000, "tick_ms") == 0)
+                cfg_tick_ms = tmp;
+        } else if (strcmp(p, "position_factor") == 0) {
+            double tmp;
+            if (parse_double(eq, &tmp, 0.0001, 1.0, "position_factor") == 0)
+                cfg_position_factor = tmp;
+        } else if (strcmp(p, "horizontal") == 0)
             cfg_horizontal = (strcmp(eq, "false") == 0) ? 0 : 1;
         else if (strcmp(p, "invert_v") == 0)
             cfg_invert_v = (strcmp(eq, "true") == 0) ? 1 : 0;
@@ -122,22 +170,34 @@ int config_parse_args(int argc, char **argv)
             cfg_mode = (strcmp(argv[i], "position") == 0) ? 1 : 0;
         } else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--deadzone") == 0) {
             if (++i >= argc) { fprintf(stderr, "--deadzone requires arg\n"); return -1; }
-            cfg_deadzone = atoi(argv[i]);
+            int tmp;
+            if (parse_int(argv[i], &tmp, 0, 9999, "--deadzone") != 0) return -1;
+            cfg_deadzone = tmp;
         } else if (strcmp(argv[i], "-g") == 0 || strcmp(argv[i], "--gain") == 0) {
             if (++i >= argc) { fprintf(stderr, "--gain requires arg\n"); return -1; }
-            cfg_gain = atof(argv[i]);
+            double tmp;
+            if (parse_double(argv[i], &tmp, 0.001, 100.0, "--gain") != 0) return -1;
+            cfg_gain = tmp;
         } else if (strcmp(argv[i], "-e") == 0 || strcmp(argv[i], "--exponent") == 0) {
             if (++i >= argc) { fprintf(stderr, "--exponent requires arg\n"); return -1; }
-            cfg_exponent = atof(argv[i]);
+            double tmp;
+            if (parse_double(argv[i], &tmp, 0.1, 10.0, "--exponent") != 0) return -1;
+            cfg_exponent = tmp;
         } else if (strcmp(argv[i], "--max-speed") == 0) {
             if (++i >= argc) { fprintf(stderr, "--max-speed requires arg\n"); return -1; }
-            cfg_max_speed = atof(argv[i]);
+            double tmp;
+            if (parse_double(argv[i], &tmp, 0.1, 1000.0, "--max-speed") != 0) return -1;
+            cfg_max_speed = tmp;
         } else if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--position-factor") == 0) {
             if (++i >= argc) { fprintf(stderr, "--position-factor requires arg\n"); return -1; }
-            cfg_position_factor = atof(argv[i]);
+            double tmp;
+            if (parse_double(argv[i], &tmp, 0.0001, 1.0, "--position-factor") != 0) return -1;
+            cfg_position_factor = tmp;
         } else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--tick") == 0) {
             if (++i >= argc) { fprintf(stderr, "--tick requires arg\n"); return -1; }
-            cfg_tick_ms = atoi(argv[i]);
+            int tmp;
+            if (parse_int(argv[i], &tmp, 5, 1000, "--tick") != 0) return -1;
+            cfg_tick_ms = tmp;
         } else if (strcmp(argv[i], "-H") == 0 || strcmp(argv[i], "--no-horizontal") == 0) {
             cfg_horizontal = 0;
         } else if (strcmp(argv[i], "--invert-v") == 0) {

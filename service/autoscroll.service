@@ -6,15 +6,17 @@ After=systemd-udevd.service
 Wants=systemd-udevd.service
 
 [Service]
+User=autoscroll
 Type=simple
-EnvironmentFile=-/etc/autoscroll.conf
 ExecStart=/usr/bin/autoscroll -f
 Restart=always
 RestartSec=2
 DevicePolicy=closed
 DeviceAllow=/dev/uinput rw
-DeviceAllow=char-input rw
+DeviceAllow=/dev/input/* rw
 ProtectHome=true
+ProtectSystem=strict
+PrivateNetwork=true
 NoNewPrivileges=true
 
 [Install]

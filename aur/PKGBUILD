@@ -4,16 +4,17 @@
 # Build from source: https://github.com/talos/autoscroll-linux
 
 pkgname=autoscroll-linux
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
 pkgdesc="System-wide Windows-style middle-click autoscroll for Linux"
 arch=('x86_64' 'aarch64')
-url="https://github.com/talos/autoscroll-linux"
+url="https://github.com/NPC-I/autoscroll-linux"
 license=('MIT')
 depends=('glibc')
 makedepends=('cmake' 'gcc')
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/NPC-I/autoscroll-linux/archive/v${pkgver}.tar.gz")
 sha256sums=('SKIP')
+install=autoscroll.install
 
 build() {
     cd "${srcdir}/${pkgname}-${pkgver}"

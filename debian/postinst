@@ -3,16 +3,16 @@ set -e
 
 case "$1" in
     configure)
+        # Create dedicated service user if it doesn't exist
+        if ! getent passwd autoscroll >/dev/null 2>&1; then
+            adduser --system --no-create-home --group autoscroll 2>/dev/null || true
+        fi
+        # Add service user to input group for device access
+        adduser autoscroll input 2>/dev/null || true
+
         # Reload udev rules so /dev/uinput permissions apply
         udevadm control --reload-rules 2>/dev/null || true
         udevadm trigger --subsystem-match=input 2>/dev/null || true
-
-        # Add the user who ran the install to 'input' group for /dev/uinput access
-        if [ -n "${SUDO_USER}" ]; then
-            if ! groups "${SUDO_USER}" 2>/dev/null | grep -qw input; then
-                adduser "${SUDO_USER}" input 2>/dev/null || true
-            fi
-        fi
 
         # Enable and start the service
         systemctl --no-reload enable autoscroll.service 2>/dev/null || true

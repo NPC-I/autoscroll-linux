@@ -1,5 +1,5 @@
 Name:     autoscroll
-Version:  1.0.0
+Version:  1.1.0
 Release:  1%{?dist}
 Summary:  System-wide Windows-style middle-click autoscroll for Linux
 License:  MIT
@@ -32,6 +32,9 @@ ctest --test-dir build
 
 %post
 %systemd_post autoscroll.service
+# Create dedicated service user
+getent passwd autoscroll >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin -M autoscroll
+usermod -aG input autoscroll
 udevadm control --reload-rules 2>/dev/null || :
 udevadm trigger --subsystem-match=input 2>/dev/null || :
 
@@ -48,5 +51,12 @@ udevadm trigger --subsystem-match=input 2>/dev/null || :
 %{_mandir}/man1/autoscroll.1*
 
 %changelog
+* Fri Jul 24 2026 autoscroll-linux contributors <root@localhost> - 1.1.0-1
+- Run as non-root autoscroll user instead of root
+- Added systemd sandboxing: ProtectSystem=strict, PrivateNetwork=true
+- Fixed trim() leading whitespace bug (position mode now works in config)
+- Added bounds-checked numeric parsing (strtol/strtod with range validation)
+- Removed EnvironmentFile= from service (incompatible parser, daemon reads file directly)
+- Removed human user from input group (keylogger risk); dedicated user only
 * Thu Jul 23 2026 autoscroll-linux contributors <root@localhost> - 1.0.0-1
 - Initial release
