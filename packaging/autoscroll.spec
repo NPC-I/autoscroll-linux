@@ -34,7 +34,6 @@ ctest --test-dir build
 %systemd_post autoscroll.service
 # Create dedicated service user
 getent passwd autoscroll >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin -M autoscroll
-usermod -aG input autoscroll
 udevadm control --reload-rules 2>/dev/null || :
 udevadm trigger --subsystem-match=input 2>/dev/null || :
 

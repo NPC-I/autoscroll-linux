@@ -1,4 +1,10 @@
-# Allow users in the 'input' group to read input devices
-# and allow the autoscroll daemon to use /dev/uinput
-KERNEL=="uinput", MODE="0660", GROUP="input", TAG+="systemd"
-KERNEL=="event*", SUBSYSTEM=="input", MODE="0660", GROUP="input"
+# Grant the autoscroll service user access to:
+#   /dev/uinput  – to inject virtual scroll events
+#   /dev/input/event* mouse-class devices – to read mouse events
+#
+# Uses ID_INPUT_MOUSE (set by udev's input-id builtin) to restrict
+# device access to pointing devices only — NOT keyboards, touchpads,
+# or tablets. This avoids putting the service user in the broad
+# 'input' group which grants rw on ALL input devices.
+KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_MOUSE}=="1", MODE="0660", GROUP="autoscroll", TAG+="systemd"
+KERNEL=="uinput", MODE="0660", GROUP="autoscroll", TAG+="systemd"

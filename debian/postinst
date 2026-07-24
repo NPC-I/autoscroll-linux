@@ -7,8 +7,6 @@ case "$1" in
         if ! getent passwd autoscroll >/dev/null 2>&1; then
             adduser --system --no-create-home --group autoscroll 2>/dev/null || true
         fi
-        # Add service user to input group for device access
-        adduser autoscroll input 2>/dev/null || true
 
         # Reload udev rules so /dev/uinput permissions apply
         udevadm control --reload-rules 2>/dev/null || true

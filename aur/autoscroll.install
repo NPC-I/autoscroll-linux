@@ -1,19 +1,19 @@
 #!/bin/sh
 # Arch Linux .install — user creation for autoscroll-linux
+# The udev rule grants the 'autoscroll' group direct access to
+# mouse-class input devices — no need for the 'input' group.
 
 post_install() {
     # Create dedicated service user
     if ! getent passwd autoscroll >/dev/null 2>&1; then
         useradd -r -s /usr/sbin/nologin -M autoscroll
     fi
-    usermod -aG input autoscroll
     udevadm control --reload-rules 2>/dev/null || true
     udevadm trigger --subsystem-match=input 2>/dev/null || true
     true
 }
 
 post_upgrade() {
-    usermod -aG input autoscroll 2>/dev/null || true
     udevadm control --reload-rules 2>/dev/null || true
     udevadm trigger --subsystem-match=input 2>/dev/null || true
     true

@@ -13,7 +13,6 @@ Restart=always
 RestartSec=2
 DevicePolicy=closed
 DeviceAllow=/dev/uinput rw
-DeviceAllow=/dev/input/* rw
 ProtectHome=true
 ProtectSystem=strict
 PrivateNetwork=true
