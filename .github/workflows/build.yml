@@ -72,7 +72,7 @@ jobs:
             ;;
           fedora-*)
             mkdir -p ~/rpmbuild/SOURCES
-            tar czf ~/rpmbuild/SOURCES/autoscroll-1.0.0.tar.gz \
+            tar czf ~/rpmbuild/SOURCES/autoscroll-1.1.0.tar.gz \
               --transform 's,^,autoscroll-linux/,' \
               --exclude .git --exclude build \
               .

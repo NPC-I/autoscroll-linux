@@ -1,0 +1,33 @@
+#!/bin/sh
+# Arch Linux .install — user creation for autoscroll-linux
+
+post_install() {
+    # Create dedicated service user
+    if ! getent passwd autoscroll >/dev/null 2>&1; then
+        useradd -r -s /usr/sbin/nologin -M autoscroll
+    fi
+    usermod -aG input autoscroll
+    udevadm control --reload-rules 2>/dev/null || true
+    udevadm trigger --subsystem-match=input 2>/dev/null || true
+    true
+}
+
+post_upgrade() {
+    usermod -aG input autoscroll 2>/dev/null || true
+    udevadm control --reload-rules 2>/dev/null || true
+    udevadm trigger --subsystem-match=input 2>/dev/null || true
+    true
+}
+
+pre_remove() {
+    systemctl stop autoscroll.service 2>/dev/null || true
+    true
+}
+
+post_remove() {
+    # Only remove user on purge
+    if [ "$1" = "purge" ] || [ "$1" = "remove" ]; then
+        userdel autoscroll 2>/dev/null || true
+    fi
+    true
+}
