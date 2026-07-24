@@ -143,8 +143,8 @@ struct Device *evdev_discover(const char *match_regex)
         struct Device *dev = calloc(1, sizeof(*dev));
         if (!dev) { close(fd); continue; }
         dev->fd = fd;
-        strncpy(dev->path, g.gl_pathv[i], sizeof(dev->path) - 1);
-        strncpy(dev->name, name, sizeof(dev->name) - 1);
+        snprintf(dev->path, sizeof(dev->path), "%s", g.gl_pathv[i]);
+        snprintf(dev->name, sizeof(dev->name), "%s", name);
         dev->next = NULL;
 
         /* Initialize scroll engine */

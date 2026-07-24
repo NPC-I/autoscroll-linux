@@ -18,6 +18,15 @@ ProtectHome=true
 ProtectSystem=strict
 PrivateNetwork=true
 NoNewPrivileges=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+RestrictNamespaces=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+SystemCallFilter=~@privileged @obsolete
 
 [Install]
 WantedBy=multi-user.target

@@ -31,12 +31,6 @@ static void cleanup_and_exit(int code)
     exit(code);
 }
 
-static void handle_signal(int sig)
-{
-    (void)sig;
-    g_running = 0;
-}
-
 /* ── Monotonic time helper ───────────────────────────────────────── */
 static double now_seconds(void)
 {
@@ -221,7 +215,7 @@ int main(int argc, char **argv)
         g_devices = calloc(1, sizeof(struct Device));
         if (!g_devices) return 1;
         g_devices->fd = -1;
-        strncpy(g_devices->path, cfg_device_path, sizeof(g_devices->path) - 1);
+        snprintf(g_devices->path, sizeof(g_devices->path), "%s", cfg_device_path);
 
         int fd = open(cfg_device_path, O_RDWR);
         if (fd < 0) {
@@ -232,7 +226,7 @@ int main(int argc, char **argv)
         char name[128] = {0};
         if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name) < 0)
             snprintf(name, sizeof(name), "pinned-device");
-        strncpy(g_devices->name, name, sizeof(g_devices->name) - 1);
+        snprintf(g_devices->name, sizeof(g_devices->name), "%s", name);
         g_devices->fd = fd;
 
         scroll_engine_init(&g_devices->engine,
